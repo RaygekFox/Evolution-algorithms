@@ -3,6 +3,7 @@ import sys
 import random
 import numpy as np
 import copy
+import pygame.gfxdraw
 
 # Initialize Pygame
 pygame.init()
@@ -14,7 +15,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Set up colors (R, G, B)
 white = (255, 255, 255)  
-black = (0, 0, 0)
+black = (30, 30, 60)
 red = (255, 0, 0)
 
 # Set up the game clock
@@ -29,8 +30,8 @@ numberOfCollisions = 0
 numberOfGenerations = 0
 
 #Configuration:
-NumberOfSurvivors = 150
-NumberOfCopies = 1000
+NumberOfSurvivors = 2
+NumberOfCopies = 10
 StrenfthOfMutation = 200
 
 
@@ -45,7 +46,12 @@ class ball:
         self.score = 0
 
     def draw(self):
-        pygame.draw.circle(screen, self.color, (self.x, self.y), self.radius)
+        #pygame.draw.circle(screen, self.color, (self.x, self.y), self.radius)
+        # Draw an antialiased circle
+        pygame.gfxdraw.aacircle(screen, self.x, self.y, self.radius, self.color)
+
+        # Fill the circle (to avoid holes due to antialiasing at the edges)
+        pygame.gfxdraw.filled_circle(screen, self.x, self.y, self.radius, self.color)
 
     def jump(self):
         if self.x in self.jumps:
