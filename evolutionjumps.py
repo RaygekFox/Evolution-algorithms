@@ -26,13 +26,12 @@ FPS = 60
 generationExists = False #if a generation exists, meaning if balls[] is not empty
 trainingIsRunning = False #if the process of training should be running right now
 winnerIsFound = False
-numberOfCollisions = 0
 numberOfGenerations = 0
 
 #Configuration:
-NumberOfSurvivors = 2
-NumberOfCopies = 10
-StrenfthOfMutation = 200
+NumberOfSurvivors = 10
+NumberOfCopies = 50
+StrenfthOfMutation = 100
 
 
 class ball:
@@ -46,11 +45,7 @@ class ball:
         self.score = 0
 
     def draw(self):
-        #pygame.draw.circle(screen, self.color, (self.x, self.y), self.radius)
-        # Draw an antialiased circle
         pygame.gfxdraw.aacircle(screen, self.x, self.y, self.radius, self.color)
-
-        # Fill the circle (to avoid holes due to antialiasing at the edges)
         pygame.gfxdraw.filled_circle(screen, self.x, self.y, self.radius, self.color)
 
     def jump(self):
@@ -73,7 +68,6 @@ class ball:
         global numberOfCollisions
         if self.x + self.radius >= obstacle.x and self.y + self.radius >= obstacle.y and self.x - self.radius <= obstacle.x + obstacle.width and self.y - self.radius <= obstacle.y + obstacle.height:
             isAlive = False
-            numberOfCollisions += 1
             return True
         else:
             return False
@@ -117,7 +111,7 @@ def select_n_best_by_score(n, balls):
     balls.sort(key=lambda ball: ball.score, reverse=True)
     return balls[:n]
 
-#copies every element in array m times
+
 def duplicate_balls_for_new_generation(m, balls):
     newBalls = []
     for i in balls:
@@ -170,14 +164,12 @@ while running:
 
 
 
-    # Draw everything on the screen
-    screen.fill(black)  # Clear the screen with white
+    screen.fill(black)  
 
-    #drawing obstacles
     draw_obstacles()
 
     if not generationExists:
-        create_first_generation(300)
+        create_first_generation(10)
         #balls.append(ball(0, screen_height-20, 20))
         #balls[0].jumps = (170,370,570)
         generationExists = True
@@ -201,24 +193,19 @@ while running:
             trainingIsRunning = False
 
 
-        if generationExists and not trainingIsRunning and not winnerIsFound:
-            balls = create_next_generation(balls, NumberOfSurvivors, NumberOfCopies, StrenfthOfMutation)
-            numberOfGenerations += 1
-            print("number of generations: ", numberOfGenerations)
-            trainingIsRunning = True
+    if generationExists and not trainingIsRunning and not winnerIsFound:
+        balls = create_next_generation(balls, NumberOfSurvivors, NumberOfCopies, StrenfthOfMutation)
+        numberOfGenerations += 1
+        print("number of generations: ", numberOfGenerations)
+        trainingIsRunning = True
     
 
 
       
 
-
-
-    # Update the display
     pygame.display.flip()
 
-    # Cap the frame rate
     clock.tick(FPS)
 
-# Clean up
 pygame.quit()
 sys.exit()
