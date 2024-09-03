@@ -37,6 +37,7 @@ CurrentBestScore = 0
 
 planetRadius = 150
 gravityStrength = 10
+initialFuel = 25
 
 class rocket:
 	def __init__(self):
@@ -46,7 +47,7 @@ class rocket:
 		self.angle = math.pi / 2
 		self.velocityX = 0
 		self.velocityY = 0
-		self.fuel = 10
+		self.fuel = initialFuel
 		self.enginePower = 11
 		self.isAlive = True
 		self.engineOn = True
@@ -89,6 +90,7 @@ class rocket:
 				self.color = orange
 			else:
 				self.engineOn = False
+				self.color = (0,255,0)
 
 
 		self.velocityX *= 0.99
@@ -107,6 +109,10 @@ class rocket:
 
 		self.calculateNeuralNetwork()
 
+		# Increase fuel by 0.1
+		self.fuel += 0.01
+
+
 
 	def calculateNeuralNetwork(self): #calculates the neural network and decides if the engine should be on and the angle changed
 		for i in range(1, len(self.neuralNetworkValues)):
@@ -118,10 +124,10 @@ class rocket:
 		
 		if self.neuralNetworkValues[3][0] > 0.5:
 			self.engineOn = True
-			self.color = orange
+			#self.color = orange
 		else:
 			self.engineOn = False
-			self.color = white
+			#self.color = white
 
 		self.angle += (self.neuralNetworkValues[3][1]-0.5) * 2 * math.pi
 			
@@ -193,7 +199,7 @@ def resetRockets(rockets):
 		rocket.score = 0
 		rocket.isAlive = True
 		rocket.engineOn = True
-		rocket.fuel = 10
+		rocket.fuel = initialFuel
 		rocket.x = screen_width / 2
 		rocket.y = screen_height / 2 + planetRadius + 10
 		rocket.angle = math.pi / 2
@@ -368,6 +374,8 @@ while running:
 		# Draw nodes
 		for pos in positions:
 			pygame.draw.circle(screen, white, (int(pos[0]), int(pos[1])), pos[2]*10)
+
+		
 
 	pygame.display.flip()
 	clock.tick(FPS) 

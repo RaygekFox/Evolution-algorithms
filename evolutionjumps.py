@@ -31,7 +31,7 @@ numberOfGenerations = 0
 #Configuration:
 NumberOfSurvivors = 10
 NumberOfCopies = 50
-StrenfthOfMutation = 100
+StrenfthOfMutation = 50
 
 
 class ball:
