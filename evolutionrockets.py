@@ -9,8 +9,8 @@ import math
 pygame.init()
 
 # Set up the game window
-screen_width = 800
-screen_height = 600
+screen_width = 1200
+screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Set up colors (R, G, B)
@@ -31,10 +31,11 @@ numberOfGenerations = 0
 #Configuration:
 initialNumberOfRockets = 10
 NumberOfSurvivors = 2
-NumberOfCopies = 4
-StrenfthOfMutation = 100
+NumberOfCopies = 10
+StrenfthOfMutation = 1
+CurrentBestScore = 0
 
-planetRadius = 50
+planetRadius = 150
 gravityStrength = 10
 
 class rocket:
@@ -89,6 +90,10 @@ class rocket:
 			else:
 				self.engineOn = False
 
+
+		self.velocityX *= 0.99
+		self.velocityY *= 0.99
+
 		self.x += self.velocityX
 		self.y += self.velocityY
 
@@ -117,12 +122,16 @@ class rocket:
 		else:
 			self.engineOn = False
 			self.color = white
-		if self.neuralNetworkValues[3][1] > 0.5:
-			self.angle += math.pi / 8
+
+		self.angle += (self.neuralNetworkValues[3][1]-0.5) * 2 * math.pi
+			
 
 		
 	def activate(self, x):
-		return 1 / (1 + math.exp(-x))  # Sigmoid activation function
+		try:
+			return 1 / (1 + math.exp(-x))  # Sigmoid activation function
+		except OverflowError:
+			return 0  # Return 0 for very large negative inputs
 	
 	def randomizeWeights(self):
 		for i in range(len(self.neuralNetworkWeights)):
@@ -156,6 +165,67 @@ def aliveRocketsExist():
 			return True
 	return False
 
+def chooseSurvivors(rockets):
+	survivors = []
+	rockets.sort(key=lambda x: x.score, reverse=True)
+	for i in range(NumberOfSurvivors):
+		survivors.append(rockets[i])
+	return survivors
+
+def createCopies(survivors):
+	global NumberOfCopies
+	nextGeneration = []
+	for i in range(len(survivors)):
+		for j in range(NumberOfCopies):
+			nextGeneration.append(copy.deepcopy(survivors[i]))
+	return nextGeneration
+
+def mutateWeights(mutatingRockets):
+	for rocket in mutatingRockets:
+		for i in range(len(rocket.neuralNetworkWeights)):
+			for j in range(len(rocket.neuralNetworkWeights[i])):
+				for k in range(len(rocket.neuralNetworkWeights[i][j])):
+					rocket.neuralNetworkWeights[i][j][k] += random.uniform(-1, 1) * StrenfthOfMutation
+	return mutatingRockets
+
+def resetRockets(rockets):
+	for rocket in rockets:
+		rocket.score = 0
+		rocket.isAlive = True
+		rocket.engineOn = True
+		rocket.fuel = 10
+		rocket.x = screen_width / 2
+		rocket.y = screen_height / 2 + planetRadius + 10
+		rocket.angle = math.pi / 2
+		rocket.velocityX = 0
+		rocket.velocityY = 0
+		rocket.color = white
+	return rockets
+	
+
+		
+
+def createNewGeneration(rockets):
+	global CurrentBestScore
+	survivors = chooseSurvivors(rockets)
+	print("Best score: ",survivors[0].score)
+	CurrentBestScore = survivors[0].score
+	copies = createCopies(survivors)
+	mutatedRockets = mutateWeights(copies)
+	rockets = survivors + mutatedRockets
+	rockets = resetRockets(rockets)
+	return rockets
+
+def changeFPS(newFPS):
+	global FPS
+	FPS = newFPS
+
+def changeSOM(newSOM):
+	global StrenfthOfMutation
+	StrenfthOfMutation += newSOM
+
+
+
 
 # Main game loop
 running = True
@@ -170,13 +240,18 @@ while running:
 			rockets[i].randomizeWeights()
 		generationExists = True
 		trainingIsRunning = True
+		numberOfGenerations += 1
 
 	if generationExists and trainingIsRunning:
 		for rocket in rockets:
 			rocket.update()
 		if not aliveRocketsExist():
-			trainingIsRunning = False
-
+			rockets = createNewGeneration(rockets)
+			numberOfGenerations += 1
+			print("Generation: ", numberOfGenerations)
+	
+	
+	
 	screen.fill(blue)
 
 	pygame.draw.circle(screen, (255, 255, 255), (screen_width // 2, screen_height // 2), planetRadius, 0)
@@ -185,6 +260,114 @@ while running:
 	for rocket in rockets:
 		if rocket.isAlive:
 			rocket.draw()
+
+	# Create buttons for FPS settings
+	button_width, button_height = 80, 30
+	button_y = screen_height - 40
+	button_colors = [(200, 200, 200), (180, 180, 180), (160, 160, 160)]
+	button_texts = ["3 FPS", "15 FPS", "60 FPS"]
+	button_fps = [3, 15, 60]
+
+	for i, (text, fps) in enumerate(zip(button_texts, button_fps)):
+		if i >= len(button_colors):
+			print(f"Warning: i ({i}) is out of range for button_colors")
+			break
+		button_x = 20 + i * (button_width + 10)
+		button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+		pygame.draw.rect(screen, button_colors[i], button_rect)
+
+		font = pygame.font.Font(None, 24)
+		text_surface = font.render(text, True, (0, 0, 0))
+		text_rect = text_surface.get_rect(center=button_rect.center)
+		screen.blit(text_surface, text_rect)	
+
+		mouse_pos = pygame.mouse.get_pos()
+		click = pygame.mouse.get_pressed()
+		if button_rect.collidepoint(mouse_pos) and click[0] == 1:
+			changeFPS(fps)			
+		
+		# Add debug print
+		print(f"Drawing button {i}: color={button_colors[i]}, text={text}, fps={fps}")
+
+	# After the loop, print the lengths of all lists
+	print(f"Lengths: colors={len(button_colors)}, texts={len(button_texts)}, fps={len(button_fps)}")
+
+	button_y = screen_height - 80
+	button_texts = ["SOM -", "SOM +"]
+	button_colors = [(200, 200, 200), (180, 180, 180)]
+	button_som = [-0.1, 0.1]
+
+	for i, (text, som) in enumerate(zip(button_texts, button_som)):
+		button_x = 20 + i * (button_width + 10)
+		button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+		pygame.draw.rect(screen, button_colors[i], button_rect)
+		
+		font = pygame.font.Font(None, 24)
+		text_surface = font.render(text, True, (0, 0, 0))
+		text_rect = text_surface.get_rect(center=button_rect.center)
+		screen.blit(text_surface, text_rect)
+		
+		# Check for button clicks
+		mouse_pos = pygame.mouse.get_pos()
+		click = pygame.mouse.get_pressed()
+		if button_rect.collidepoint(mouse_pos) and click[0] == 1:
+			changeSOM(som)
+	
+	# Draw text for generation, best score, and strength of mutation
+	font = pygame.font.Font(None, 24)
+	text_color = (255, 255, 255)  # White color for text
+	
+	# Number of generations
+	gen_text = f"Generation: {numberOfGenerations}"
+	gen_surface = font.render(gen_text, True, text_color)
+	screen.blit(gen_surface, (20, 20))
+	
+	# Best score
+	best_score = CurrentBestScore
+	score_text = f"Best Score: {best_score}"
+	score_surface = font.render(score_text, True, text_color)
+	screen.blit(score_surface, (20, 50))
+	
+	# Strength of mutation
+	som_text = f"Strength of Mutation: {StrenfthOfMutation:.1f}"
+	som_surface = font.render(som_text, True, text_color)
+	screen.blit(som_surface, (20, 80))
+		
+	# Draw neural network visualization for rockets[0]
+	if rockets:
+		nn_width, nn_height = 300, 200
+		nn_x, nn_y = screen_width - nn_width - 20, 20
+		layer_sizes = [4, 4, 4, 2]
+		max_layer_size = max(layer_sizes)
+		
+		# Calculate positions for nodes
+		positions = []
+		for i, layer_size in enumerate(layer_sizes):
+			layer_x = nn_x + i * (nn_width / (len(layer_sizes) - 1))
+			for j in range(layer_size):
+				y_offset = (max_layer_size - layer_size) / 2
+				node_y = nn_y + (y_offset + j) * (nn_height / (max_layer_size - 1))
+				value = (math.log(math.log(abs(rockets[0].neuralNetworkValues[i][j])+1)+1))
+				positions.append((layer_x, node_y, value))
+				
+				
+		
+		# Draw connections (weights)
+		node_index = 0
+		for layer, next_layer in zip(layer_sizes[:-1], layer_sizes[1:]):
+			for i in range(layer):
+				for j in range(next_layer):
+					start = (positions[node_index + i][0],positions[node_index + i][1])
+					end = (positions[node_index + layer + j][0],positions[node_index + layer + j][1])
+					weight = rockets[0].neuralNetworkWeights[len(positions) // 4 - 1][i][j]
+					color = (0, 255, 0) if weight > 0 else (255, 0, 0)
+					thickness = int(math.log(abs(weight) + 1) * 2) + 1
+					pygame.draw.line(screen, color, start, end, thickness)
+			node_index += layer
+		
+		# Draw nodes
+		for pos in positions:
+			pygame.draw.circle(screen, white, (int(pos[0]), int(pos[1])), pos[2]*10)
 
 	pygame.display.flip()
 	clock.tick(FPS) 
