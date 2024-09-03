@@ -1,30 +1,30 @@
 import pygame 
-import sys # type: ignore
-import random # type: ignore
-import numpy as np # type: ignore
+import sys 
+import random 
+import numpy as np
 import copy
-import pygame.gfxdraw # type: ignore
+import pygame.gfxdraw 
 import math
-# Initialize Pygame
+
 pygame.init()
 
-# Set up the game window
+
 screen_width = 1200
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
 
-# Set up colors (R, G, B)
+
 white = (255, 255, 255)  
 blue = (30, 30, 60)
 orange = (255, 100, 0)
 
-# Set up the game clock
+
 clock = pygame.time.Clock()
 FPS = 30
 
-#State variables:
-generationExists = False #if a generation exists, meaning if balls[] is not empty
-trainingIsRunning = False #if the process of training should be running right now
+
+generationExists = False # if balls[] is not empty
+trainingIsRunning = False 
 winnerIsFound = False
 numberOfGenerations = 0
 
@@ -109,12 +109,12 @@ class rocket:
 
 		self.calculateNeuralNetwork()
 
-		# Increase fuel by 0.1
+
 		self.fuel += 0.01
 
 
 
-	def calculateNeuralNetwork(self): #calculates the neural network and decides if the engine should be on and the angle changed
+	def calculateNeuralNetwork(self): 
 		for i in range(1, len(self.neuralNetworkValues)):
 			for j in range(len(self.neuralNetworkValues[i])):
 				sum = 0
@@ -124,10 +124,10 @@ class rocket:
 		
 		if self.neuralNetworkValues[3][0] > 0.5:
 			self.engineOn = True
-			#self.color = orange
+			
 		else:
 			self.engineOn = False
-			#self.color = white
+			
 
 		self.angle += (self.neuralNetworkValues[3][1]-0.5) * 2 * math.pi
 			
@@ -135,9 +135,9 @@ class rocket:
 		
 	def activate(self, x):
 		try:
-			return 1 / (1 + math.exp(-x))  # Sigmoid activation function
+			return 1 / (1 + math.exp(-x))  
 		except OverflowError:
-			return 0  # Return 0 for very large negative inputs
+			return 0  
 	
 	def randomizeWeights(self):
 		for i in range(len(self.neuralNetworkWeights)):
@@ -147,7 +147,7 @@ class rocket:
 
 	
 	def draw(self):
-		# Calculate the points of the triangle
+		
 		base_center = (int(self.x), int(self.y))
 		tip_x = int(self.x + 20 * math.cos(self.angle))
 		tip_y = int(self.y + 20 * math.sin(self.angle))
@@ -156,11 +156,7 @@ class rocket:
 		right_x = int(self.x + 10 * math.cos(self.angle - math.pi/2))
 		right_y = int(self.y + 10 * math.sin(self.angle - math.pi/2))
 
-		# Draw the triangle
 		pygame.draw.polygon(screen, self.color, [(tip_x, tip_y), (left_x, left_y), (right_x, right_y)])
-
-
-
 
 
 rockets = []
@@ -209,8 +205,6 @@ def resetRockets(rockets):
 	return rockets
 	
 
-		
-
 def createNewGeneration(rockets):
 	global CurrentBestScore
 	survivors = chooseSurvivors(rockets)
@@ -233,7 +227,7 @@ def changeSOM(newSOM):
 
 
 
-# Main game loop
+
 running = True
 while running:
 	for event in pygame.event.get():
@@ -262,12 +256,12 @@ while running:
 
 	pygame.draw.circle(screen, (255, 255, 255), (screen_width // 2, screen_height // 2), planetRadius, 0)
 
-	# Draw all rockets
+
 	for rocket in rockets:
 		if rocket.isAlive:
 			rocket.draw()
 
-	# Create buttons for FPS settings
+	# buttons for FPS settings
 	button_width, button_height = 80, 30
 	button_y = screen_height - 40
 	button_colors = [(200, 200, 200), (180, 180, 180), (160, 160, 160)]
@@ -292,11 +286,7 @@ while running:
 		if button_rect.collidepoint(mouse_pos) and click[0] == 1:
 			changeFPS(fps)			
 		
-		# Add debug print
-		print(f"Drawing button {i}: color={button_colors[i]}, text={text}, fps={fps}")
 
-	# After the loop, print the lengths of all lists
-	print(f"Lengths: colors={len(button_colors)}, texts={len(button_texts)}, fps={len(button_fps)}")
 
 	button_y = screen_height - 80
 	button_texts = ["SOM -", "SOM +"]
@@ -313,22 +303,22 @@ while running:
 		text_rect = text_surface.get_rect(center=button_rect.center)
 		screen.blit(text_surface, text_rect)
 		
-		# Check for button clicks
+		
 		mouse_pos = pygame.mouse.get_pos()
 		click = pygame.mouse.get_pressed()
 		if button_rect.collidepoint(mouse_pos) and click[0] == 1:
 			changeSOM(som)
 	
-	# Draw text for generation, best score, and strength of mutation
-	font = pygame.font.Font(None, 24)
-	text_color = (255, 255, 255)  # White color for text
 	
-	# Number of generations
+	font = pygame.font.Font(None, 24)
+	text_color = (255, 255, 255) 
+	
+	
 	gen_text = f"Generation: {numberOfGenerations}"
 	gen_surface = font.render(gen_text, True, text_color)
 	screen.blit(gen_surface, (20, 20))
 	
-	# Best score
+	
 	best_score = CurrentBestScore
 	score_text = f"Best Score: {best_score}"
 	score_surface = font.render(score_text, True, text_color)
@@ -346,7 +336,7 @@ while running:
 		layer_sizes = [4, 4, 4, 2]
 		max_layer_size = max(layer_sizes)
 		
-		# Calculate positions for nodes
+		
 		positions = []
 		for i, layer_size in enumerate(layer_sizes):
 			layer_x = nn_x + i * (nn_width / (len(layer_sizes) - 1))
@@ -380,8 +370,8 @@ while running:
 	pygame.display.flip()
 	clock.tick(FPS) 
 
-# Quit Pygame
+
 pygame.quit()
-sys.exit()  # Add this line to ensure the program exits cleanly
+sys.exit()  
 
 
