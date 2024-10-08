@@ -17,8 +17,6 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 white = (255, 255, 255)  
 blue = (30, 30, 60)
 orange = (255, 100, 0)
-
-
 clock = pygame.time.Clock()
 FPS = 30
 
@@ -30,14 +28,14 @@ numberOfGenerations = 0
 
 #Configuration:
 initialNumberOfRockets = 10
-NumberOfSurvivors = 2
-NumberOfCopies = 10
+NumberOfSurvivors = 5
+NumberOfCopies = 20
 StrenfthOfMutation = 1
 CurrentBestScore = 0
 
 planetRadius = 150
 gravityStrength = 10
-initialFuel = 25
+initialFuel = 10
 
 class rocket:
 	def __init__(self):
@@ -291,7 +289,7 @@ while running:
 	button_y = screen_height - 80
 	button_texts = ["SOM -", "SOM +"]
 	button_colors = [(200, 200, 200), (180, 180, 180)]
-	button_som = [-0.1, 0.1]
+	button_som = [-0.01, 0.01]
 
 	for i, (text, som) in enumerate(zip(button_texts, button_som)):
 		button_x = 20 + i * (button_width + 10)
